@@ -1,0 +1,7 @@
+DROP TABLE IF EXISTS coin_transfers;
+
+DROP TABLE IF EXISTS inventory;
+
+DROP TABLE IF EXISTS items;
+
+DROP TABLE IF EXISTS users;
