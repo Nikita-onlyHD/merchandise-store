@@ -66,7 +66,7 @@ func (m *mockCoinTransferRepo) WithTx(tx pgx.Tx) CoinTransferRepository {
 	return m
 }
 
-func TestSendCoinsInvalidAmount(t *testing.T) {
+func TestSendCoins_InvalidAmount(t *testing.T) {
 	svc := NewCoinTransferService(nil, nil, nil)
 
 	err := svc.SendCoins(context.Background(), 1, 2, -10)
@@ -76,7 +76,7 @@ func TestSendCoinsInvalidAmount(t *testing.T) {
 	}
 }
 
-func TestSendCoinsSelfTransfer(t *testing.T) {
+func TestSendCoins_SelfTransfer(t *testing.T) {
 	svc := NewCoinTransferService(nil, nil, nil)
 
 	err := svc.SendCoins(context.Background(), 1, 1, 10)
@@ -86,7 +86,7 @@ func TestSendCoinsSelfTransfer(t *testing.T) {
 	}
 }
 
-func TestSendCoinsSuccess(t *testing.T) {
+func TestSendCoins_Success(t *testing.T) {
 	txMock := &mockTx{}
 	transactorMock := &mockTransactor{tx: txMock}
 
@@ -102,7 +102,7 @@ func TestSendCoinsSuccess(t *testing.T) {
 	}
 }
 
-func TestSendCoinsInsufficientFunds(t *testing.T) {
+func TestSendCoins_InsufficientFunds(t *testing.T) {
 	txMock := &mockTx{}
 	transactorMock := &mockTransactor{tx: txMock}
 
@@ -119,5 +119,26 @@ func TestSendCoinsInsufficientFunds(t *testing.T) {
 
 	if !errors.Is(err, repository.ErrInsufficientFunds) {
 		t.Errorf("expected %v got %v", repository.ErrInsufficientFunds, err)
+	}
+}
+
+func TestSendCoins_TxBeginError(t *testing.T) {
+	expected := errors.New("db connection lost")
+
+	txMock := &mockTx{}
+	transactorMock := &mockTransactor{
+		tx:  txMock,
+		err: expected,
+	}
+
+	userRepoMock := &mockUserRepo{}
+	coinTransferRepoMock := &mockCoinTransferRepo{}
+
+	svc := NewCoinTransferService(transactorMock, userRepoMock, coinTransferRepoMock)
+
+	err := svc.SendCoins(context.Background(), 1, 2, 50)
+
+	if !errors.Is(err, expected) {
+		t.Errorf("expected %v got %v", expected, err)
 	}
 }
