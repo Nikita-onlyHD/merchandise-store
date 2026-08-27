@@ -36,10 +36,6 @@ type mockUserRepo struct {
 	updateBalanceFunc func(ctx context.Context, userID, amount int) error
 }
 
-func (m *mockUserRepo) GetUser(ctx context.Context, login string) (*models.User, error) {
-	return nil, nil
-}
-
 func (m *mockUserRepo) UpdateBalance(ctx context.Context, userID int, amount int) error {
 	if m.updateBalanceFunc != nil {
 		return m.updateBalanceFunc(ctx, userID, amount)

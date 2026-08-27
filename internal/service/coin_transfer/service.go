@@ -15,7 +15,6 @@ var (
 )
 
 type UserRepository interface {
-	GetUser(ctx context.Context, login string) (*models.User, error)
 	UpdateBalance(ctx context.Context, userID int, amount int) error
 	WithTx(tx pgx.Tx) UserRepository
 }
