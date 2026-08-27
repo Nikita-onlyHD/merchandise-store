@@ -13,6 +13,7 @@ import (
 var (
 	ErrUserNotFound      = errors.New("user not found")
 	ErrUserAlreadyExists = errors.New("user already exists")
+	ErrInsufficientFunds = errors.New("user does not have sufficient funds")
 )
 
 type userRepository struct {
@@ -60,6 +61,27 @@ func (r *userRepository) CreateUser(ctx context.Context, user *models.User) erro
 			return ErrUserAlreadyExists
 		}
 		return fmt.Errorf("failed to create user: %w", err)
+	}
+
+	return nil
+}
+
+func (r *userRepository) UpdateBalance(ctx context.Context, userID int, amount int) error {
+	query := `UPDATE users
+			  SET balance = users.balance - $1
+			  WHERE id = $2`
+
+	tag, err := r.db.Exec(ctx, query, amount, userID)
+	if err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == "23514" {
+			return ErrInsufficientFunds
+		}
+		return fmt.Errorf("failed to update user balance: %w", err)
+	}
+
+	if tag.RowsAffected() == 0 {
+		return ErrUserNotFound
 	}
 
 	return nil
