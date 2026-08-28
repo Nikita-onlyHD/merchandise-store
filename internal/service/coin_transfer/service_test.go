@@ -5,8 +5,8 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/Nikita-onlyHD/merchandise-store/internal/app_errors"
 	"github.com/Nikita-onlyHD/merchandise-store/internal/models"
-	"github.com/Nikita-onlyHD/merchandise-store/internal/repository"
 	"github.com/jackc/pgx/v5"
 )
 
@@ -71,8 +71,8 @@ func TestSendCoins_InvalidAmount(t *testing.T) {
 
 	err := svc.SendCoins(context.Background(), 1, 2, -10)
 
-	if !errors.Is(err, ErrInvalidAmount) {
-		t.Errorf("expected error %v got %v", ErrInvalidAmount, err)
+	if !errors.Is(err, app_errors.ErrInvalidAmount) {
+		t.Errorf("expected error %v got %v", app_errors.ErrInvalidAmount, err)
 	}
 }
 
@@ -81,8 +81,8 @@ func TestSendCoins_SelfTransfer(t *testing.T) {
 
 	err := svc.SendCoins(context.Background(), 1, 1, 10)
 
-	if !errors.Is(err, ErrSelfTransfer) {
-		t.Errorf("expected error %v got %v", ErrSelfTransfer, err)
+	if !errors.Is(err, app_errors.ErrSelfTransfer) {
+		t.Errorf("expected error %v got %v", app_errors.ErrSelfTransfer, err)
 	}
 }
 
@@ -108,7 +108,7 @@ func TestSendCoins_InsufficientFunds(t *testing.T) {
 
 	userRepoMock := &mockUserRepo{
 		updateBalanceFunc: func(ctx context.Context, userID, amount int) error {
-			return repository.ErrInsufficientFunds
+			return app_errors.ErrInsufficientFunds
 		},
 	}
 	coinTransferRepoMock := &mockCoinTransferRepo{}
@@ -117,8 +117,8 @@ func TestSendCoins_InsufficientFunds(t *testing.T) {
 
 	err := svc.SendCoins(context.Background(), 1, 2, 50)
 
-	if !errors.Is(err, repository.ErrInsufficientFunds) {
-		t.Errorf("expected %v got %v", repository.ErrInsufficientFunds, err)
+	if !errors.Is(err, app_errors.ErrInsufficientFunds) {
+		t.Errorf("expected %v got %v", app_errors.ErrInsufficientFunds, err)
 	}
 }
 

@@ -5,8 +5,8 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/Nikita-onlyHD/merchandise-store/internal/app_errors"
 	"github.com/Nikita-onlyHD/merchandise-store/internal/models"
-	"github.com/Nikita-onlyHD/merchandise-store/internal/repository"
 	"github.com/golang-jwt/jwt"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -63,16 +63,16 @@ func (m *mockCoinTransferRepo) GetTransferHistory(ctx context.Context, userID in
 func TestLogin_UserNotFound(t *testing.T) {
 	userRepoMock := &mockUserRepo{
 		getUser: func(ctx context.Context, login string) (*models.User, error) {
-			return nil, repository.ErrUserNotFound
+			return nil, app_errors.ErrUserNotFound
 		},
 	}
 
 	svc := NewUserService(userRepoMock, nil, nil, "")
 
-	_, err := svc.Login(context.Background(), "test_login", "test_password")
+	_, err := svc.Auth(context.Background(), "test_login", "test_password")
 
-	if !errors.Is(err, repository.ErrUserNotFound) {
-		t.Errorf("expected %v got %v", repository.ErrUserNotFound, err)
+	if !errors.Is(err, app_errors.ErrUserNotFound) {
+		t.Errorf("expected %v got %v", app_errors.ErrUserNotFound, err)
 	}
 }
 
@@ -96,9 +96,9 @@ func TestLogin_IncorrectPassword(t *testing.T) {
 
 	svc := NewUserService(userRepoMock, nil, nil, "")
 
-	_, err := svc.Login(context.Background(), userMock.Login, passwordWrong)
-	if !errors.Is(err, ErrIncorrectPassword) {
-		t.Errorf("expected %v got %v", ErrIncorrectPassword, err)
+	_, err := svc.Auth(context.Background(), userMock.Login, passwordWrong)
+	if !errors.Is(err, app_errors.ErrIncorrectPassword) {
+		t.Errorf("expected %v got %v", app_errors.ErrIncorrectPassword, err)
 	}
 }
 
@@ -123,7 +123,7 @@ func TestLogin_Success(t *testing.T) {
 
 	svc := NewUserService(userRepoMock, nil, nil, secret)
 
-	token, err := svc.Login(context.Background(), userMock.Login, password)
+	token, err := svc.Auth(context.Background(), userMock.Login, password)
 	if err != nil {
 		t.Fatalf("expected no error got %v", err)
 	}
@@ -152,15 +152,15 @@ func TestRegister_UserAlreadyExists(t *testing.T) {
 
 	userRepoMock := &mockUserRepo{
 		createUser: func(ctx context.Context, user *models.User) error {
-			return repository.ErrUserAlreadyExists
+			return app_errors.ErrUserAlreadyExists
 		},
 	}
 
 	svc := NewUserService(userRepoMock, nil, nil, "")
 
 	err := svc.Register(context.Background(), login, password)
-	if !errors.Is(err, repository.ErrUserAlreadyExists) {
-		t.Errorf("expected %v got %v", repository.ErrUserAlreadyExists, err)
+	if !errors.Is(err, app_errors.ErrUserAlreadyExists) {
+		t.Errorf("expected %v got %v", app_errors.ErrUserAlreadyExists, err)
 	}
 }
 
@@ -196,7 +196,7 @@ func TestRegister_Success(t *testing.T) {
 func TestGetInfo_UserNotFound(t *testing.T) {
 	userRepoMock := &mockUserRepo{
 		getUserByID: func(ctx context.Context, userID int) (*models.User, error) {
-			return nil, repository.ErrUserNotFound
+			return nil, app_errors.ErrUserNotFound
 		},
 	}
 
@@ -204,8 +204,8 @@ func TestGetInfo_UserNotFound(t *testing.T) {
 
 	_, err := svc.GetInfo(context.Background(), 1)
 
-	if !errors.Is(err, repository.ErrUserNotFound) {
-		t.Errorf("expected %v got %v", repository.ErrUserNotFound, err)
+	if !errors.Is(err, app_errors.ErrUserNotFound) {
+		t.Errorf("expected %v got %v", app_errors.ErrUserNotFound, err)
 	}
 }
 

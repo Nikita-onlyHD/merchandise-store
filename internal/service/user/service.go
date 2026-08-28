@@ -6,12 +6,12 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/Nikita-onlyHD/merchandise-store/internal/app_errors"
+	"github.com/Nikita-onlyHD/merchandise-store/internal/dto"
 	"github.com/Nikita-onlyHD/merchandise-store/internal/models"
 	"github.com/golang-jwt/jwt"
 	"golang.org/x/crypto/bcrypt"
 )
-
-var ErrIncorrectPassword = errors.New("incorrect password")
 
 type UserRepository interface {
 	GetUser(ctx context.Context, login string) (*models.User, error)
@@ -48,15 +48,25 @@ func NewUserService(
 	}
 }
 
-func (s *Service) Login(ctx context.Context, login string, password string) (string, error) {
+func (s *Service) Auth(ctx context.Context, login string, password string) (string, error) {
 	user, err := s.userRepo.GetUser(ctx, login)
 	if err != nil {
-		return "", err
-	}
-
-	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
-	if err != nil {
-		return "", ErrIncorrectPassword
+		if errors.Is(err, app_errors.ErrUserNotFound) {
+			if regErr := s.Register(ctx, login, password); regErr != nil {
+				return "", regErr
+			}
+			user, err = s.userRepo.GetUser(ctx, login)
+			if err != nil {
+				return "", err
+			}
+		} else {
+			return "", err
+		}
+	} else {
+		err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
+		if err != nil {
+			return "", app_errors.ErrIncorrectPassword
+		}
 	}
 
 	claims := jwt.MapClaims{
@@ -94,33 +104,7 @@ func (s *Service) Register(ctx context.Context, login string, password string) e
 	return nil
 }
 
-type UserInfoDTO struct {
-	Coins       int         `json:"coins"`
-	Inventory   []Item      `json:"inventory"`
-	CoinHistory CoinHistory `json:"coinHistory"`
-}
-
-type Item struct {
-	Type     string `json:"type"`
-	Quantity int    `json:"quantity"`
-}
-
-type CoinHistory struct {
-	Received []Received `json:"received"`
-	Sent     []Sent     `json:"sent"`
-}
-
-type Received struct {
-	FromUser string `json:"fromUser"`
-	Amount   int    `json:"amount"`
-}
-
-type Sent struct {
-	ToUser string `json:"toUser"`
-	Amount int    `json:"amount"`
-}
-
-func (s *Service) GetInfo(ctx context.Context, userID int) (*UserInfoDTO, error) {
+func (s *Service) GetInfo(ctx context.Context, userID int) (*dto.UserInfo, error) {
 	user, err := s.userRepo.GetUserByID(ctx, userID)
 	if err != nil {
 		return nil, err
@@ -136,9 +120,9 @@ func (s *Service) GetInfo(ctx context.Context, userID int) (*UserInfoDTO, error)
 		return nil, err
 	}
 
-	transformedInventory := make([]Item, 0, len(inventory))
+	transformedInventory := make([]dto.Item, 0, len(inventory))
 	for _, i := range inventory {
-		item := Item{
+		item := dto.Item{
 			Type:     i.Item.Name,
 			Quantity: int(i.Quantity),
 		}
@@ -146,17 +130,17 @@ func (s *Service) GetInfo(ctx context.Context, userID int) (*UserInfoDTO, error)
 		transformedInventory = append(transformedInventory, item)
 	}
 
-	received := make([]Received, 0)
-	sent := make([]Sent, 0)
+	received := make([]dto.Received, 0)
+	sent := make([]dto.Sent, 0)
 	for _, ct := range coinTransferHistory {
 		if user.Login == ct.ToUser {
-			transfer := Received{
+			transfer := dto.Received{
 				FromUser: ct.FromUser,
 				Amount:   int(ct.Amount),
 			}
 			received = append(received, transfer)
 		} else {
-			transfer := Sent{
+			transfer := dto.Sent{
 				ToUser: ct.ToUser,
 				Amount: int(ct.Amount),
 			}
@@ -164,12 +148,12 @@ func (s *Service) GetInfo(ctx context.Context, userID int) (*UserInfoDTO, error)
 		}
 	}
 
-	coinHistory := CoinHistory{
+	coinHistory := dto.CoinHistory{
 		Received: received,
 		Sent:     sent,
 	}
 
-	return &UserInfoDTO{
+	return &dto.UserInfo{
 		Coins:       int(user.Balance),
 		Inventory:   transformedInventory,
 		CoinHistory: coinHistory,

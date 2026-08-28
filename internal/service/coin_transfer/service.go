@@ -2,16 +2,11 @@ package coin_transfer
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
+	"github.com/Nikita-onlyHD/merchandise-store/internal/app_errors"
 	"github.com/Nikita-onlyHD/merchandise-store/internal/models"
 	"github.com/jackc/pgx/v5"
-)
-
-var (
-	ErrInvalidAmount = errors.New("amount must be positive")
-	ErrSelfTransfer  = errors.New("cannot transfer coin to yourself")
 )
 
 type UserRepository interface {
@@ -44,11 +39,11 @@ func NewCoinTransferService(txManager Transactor, userRepo UserRepository, coinT
 
 func (s *Service) SendCoins(ctx context.Context, fromUserID, toUserID, amount int) error {
 	if amount <= 0 {
-		return ErrInvalidAmount
+		return app_errors.ErrInvalidAmount
 	}
 
 	if fromUserID == toUserID {
-		return ErrSelfTransfer
+		return app_errors.ErrSelfTransfer
 	}
 
 	tx, err := s.txManager.Begin(ctx)

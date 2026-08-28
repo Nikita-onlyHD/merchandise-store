@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/Nikita-onlyHD/merchandise-store/internal/app_errors"
 	"github.com/Nikita-onlyHD/merchandise-store/internal/models"
 	"github.com/jackc/pgx/v5/pgconn"
 )
@@ -35,7 +36,7 @@ func (r *coinTransferRepository) AddTransfer(ctx context.Context, coinTransfer *
 	if err != nil {
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) && pgErr.Code == "23503" {
-			return ErrUserNotFound
+			return app_errors.ErrUserNotFound
 		}
 		return fmt.Errorf("failed to add coin transfer: %w", err)
 	}
