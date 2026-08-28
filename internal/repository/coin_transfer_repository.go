@@ -43,10 +43,13 @@ func (r *coinTransferRepository) AddTransfer(ctx context.Context, coinTransfer *
 	return nil
 }
 
-func (r *coinTransferRepository) GetTransferHistory(ctx context.Context, userID int) ([]models.CoinTransfer, error) {
-	query := `SELECT id, from_user_id, to_user_id, amount, created_at FROM coin_transfers 
-			  WHERE from_user_id = $1 OR to_user_id = $1
-			  ORDER BY created_at`
+func (r *coinTransferRepository) GetTransferHistory(ctx context.Context, userID int) ([]models.CoinTransferDetail, error) {
+	query := `SELECT t.id, sender.login AS from_user, receiver.login AS to_user, t.amount, t.created_at 
+			  FROM coin_transfers t
+			  JOIN users sender ON t.from_user_id = sender.id
+			  JOIN users receiver ON t.to_user_id = receiver.id
+			  WHERE t.from_user_id = $1 OR t.to_user_id = $1
+			  ORDER BY t.created_at;`
 
 	rows, err := r.db.Query(ctx, query, userID)
 	if err != nil {
@@ -54,13 +57,13 @@ func (r *coinTransferRepository) GetTransferHistory(ctx context.Context, userID 
 	}
 	defer rows.Close()
 
-	history := make([]models.CoinTransfer, 0)
+	history := make([]models.CoinTransferDetail, 0)
 	for rows.Next() {
-		var coinTransfer models.CoinTransfer
+		var coinTransfer models.CoinTransferDetail
 		err := rows.Scan(
 			&coinTransfer.ID,
-			&coinTransfer.FromUserID,
-			&coinTransfer.ToUserID,
+			&coinTransfer.FromUser,
+			&coinTransfer.ToUser,
 			&coinTransfer.Amount,
 			&coinTransfer.CreatedAt,
 		)

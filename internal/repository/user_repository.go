@@ -49,6 +49,25 @@ func (r *userRepository) GetUser(ctx context.Context, login string) (*models.Use
 	return &user, nil
 }
 
+func (r *userRepository) GetUserByID(ctx context.Context, userID int) (*models.User, error) {
+	var user models.User
+
+	err := r.db.QueryRow(ctx, "SELECT id, login, password, balance FROM users WHERE id = $1", userID).Scan(
+		&user.ID,
+		&user.Login,
+		&user.Password,
+		&user.Balance,
+	)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrUserNotFound
+		}
+		return nil, fmt.Errorf("failed to get user: %w", err)
+	}
+
+	return &user, nil
+}
+
 func (r *userRepository) CreateUser(ctx context.Context, user *models.User) error {
 	err := r.db.QueryRow(ctx, "INSERT INTO users (login, password, balance) VALUES ($1, $2, $3) RETURNING id",
 		user.Login,

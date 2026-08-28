@@ -22,7 +22,11 @@ func (r *inventoryRepository) WithTx(tx DBTX) *inventoryRepository {
 }
 
 func (r *inventoryRepository) GetInventoryByID(ctx context.Context, userID int) ([]models.InventoryItem, error) {
-	rows, err := r.db.Query(ctx, "SELECT id, quantity, user_id, item_id FROM inventory WHERE user_id = $1", userID)
+	query := `SELECT inv.id, inv.quantity, inv.user_id, it.id, it.name, it.cost
+			  FROM inventory as inv
+			  INNER JOIN items as it ON inv.item_id = it.id
+			  WHERE user_id = $1`
+	rows, err := r.db.Query(ctx, query, userID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get inventory: %w", err)
 	}
@@ -31,7 +35,7 @@ func (r *inventoryRepository) GetInventoryByID(ctx context.Context, userID int) 
 	inventory := make([]models.InventoryItem, 0)
 	for rows.Next() {
 		var item models.InventoryItem
-		err := rows.Scan(&item.ID, &item.Quantity, &item.UserID, &item.ItemID)
+		err := rows.Scan(&item.ID, &item.Quantity, &item.UserID, &item.Item.ID, &item.Item.Name, &item.Item.Cost)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan row: %w", err)
 		}

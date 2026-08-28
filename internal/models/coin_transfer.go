@@ -9,3 +9,11 @@ type CoinTransfer struct {
 	Amount     uint
 	CreatedAt  time.Time
 }
+
+type CoinTransferDetail struct {
+	ID        int
+	FromUser  string
+	ToUser    string
+	Amount    uint
+	CreatedAt time.Time
+}
