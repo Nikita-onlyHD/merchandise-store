@@ -2,6 +2,7 @@ package coin_transfer
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/Nikita-onlyHD/merchandise-store/internal/app_errors"
@@ -11,6 +12,7 @@ import (
 
 type UserRepository interface {
 	UpdateBalance(ctx context.Context, userID int, amount int) error
+	GetUser(ctx context.Context, login string) (*models.User, error)
 	WithTx(tx pgx.Tx) UserRepository
 }
 
@@ -37,12 +39,20 @@ func NewCoinTransferService(txManager Transactor, userRepo UserRepository, coinT
 	}
 }
 
-func (s *Service) SendCoins(ctx context.Context, fromUserID, toUserID, amount int) error {
+func (s *Service) SendCoins(ctx context.Context, fromUserID int, toUserLogin string, amount int) error {
 	if amount <= 0 {
 		return app_errors.ErrInvalidAmount
 	}
 
-	if fromUserID == toUserID {
+	toUser, err := s.userRepo.GetUser(ctx, toUserLogin)
+	if err != nil {
+		if errors.Is(err, app_errors.ErrUserNotFound) {
+			return app_errors.ErrUserNotFound
+		}
+		return fmt.Errorf("failed to find recipient: %w", err)
+	}
+
+	if fromUserID == toUser.ID {
 		return app_errors.ErrSelfTransfer
 	}
 
@@ -60,14 +70,14 @@ func (s *Service) SendCoins(ctx context.Context, fromUserID, toUserID, amount in
 		return err
 	}
 
-	err = userRepoTx.UpdateBalance(ctx, toUserID, -amount)
+	err = userRepoTx.UpdateBalance(ctx, toUser.ID, -amount)
 	if err != nil {
 		return err
 	}
 
 	coinTransfer := models.CoinTransfer{
 		FromUserID: fromUserID,
-		ToUserID:   toUserID,
+		ToUserID:   toUser.ID,
 		Amount:     uint(amount),
 	}
 	err = coinTransferRepoTx.AddTransfer(ctx, &coinTransfer)
