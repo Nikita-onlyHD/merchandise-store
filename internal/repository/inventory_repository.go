@@ -15,12 +15,6 @@ func NewInventoryRepository(db DBTX) *inventoryRepository {
 	return &inventoryRepository{db: db}
 }
 
-func (r *inventoryRepository) WithTx(tx DBTX) *inventoryRepository {
-	return &inventoryRepository{
-		db: tx,
-	}
-}
-
 func (r *inventoryRepository) GetInventoryByID(ctx context.Context, userID int) ([]models.InventoryItem, error) {
 	query := `SELECT inv.id, inv.quantity, inv.user_id, it.id, it.name, it.cost
 			  FROM inventory as inv

@@ -18,12 +18,6 @@ func NewItemRepository(db DBTX) *itemRepository {
 	return &itemRepository{db: db}
 }
 
-func (r *itemRepository) WithTx(tx DBTX) *itemRepository {
-	return &itemRepository{
-		db: tx,
-	}
-}
-
 func (r *itemRepository) GetItemByName(ctx context.Context, name string) (*models.Item, error) {
 	var item models.Item
 

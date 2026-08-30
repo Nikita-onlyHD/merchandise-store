@@ -18,12 +18,6 @@ func NewCoinTransferRepository(db DBTX) *coinTransferRepository {
 	return &coinTransferRepository{db: db}
 }
 
-func (r *coinTransferRepository) WithTx(tx DBTX) *coinTransferRepository {
-	return &coinTransferRepository{
-		db: tx,
-	}
-}
-
 func (r *coinTransferRepository) AddTransfer(ctx context.Context, coinTransfer *models.CoinTransfer) error {
 	query := `INSERT INTO coin_transfers (from_user_id, to_user_id, amount) 
 			  VALUES ($1, $2, $3) RETURNING id, created_at`

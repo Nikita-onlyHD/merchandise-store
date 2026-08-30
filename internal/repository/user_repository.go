@@ -19,12 +19,6 @@ func NewUserRepository(db DBTX) *userRepository {
 	return &userRepository{db: db}
 }
 
-func (r *userRepository) WithTx(tx DBTX) *userRepository {
-	return &userRepository{
-		db: tx,
-	}
-}
-
 func (r *userRepository) GetUser(ctx context.Context, login string) (*models.User, error) {
 	var user models.User
 

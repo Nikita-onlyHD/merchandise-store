@@ -7,29 +7,19 @@ import (
 
 	"github.com/Nikita-onlyHD/merchandise-store/internal/app_errors"
 	"github.com/Nikita-onlyHD/merchandise-store/internal/models"
-	"github.com/jackc/pgx/v5"
+	"github.com/Nikita-onlyHD/merchandise-store/internal/repository"
 )
 
-type mockTx struct {
-	pgx.Tx
-	commitErr error
+type mockTxManager struct {
+	repos repository.TxRepositories
+	err   error
 }
 
-func (m *mockTx) Commit(ctx context.Context) error {
-	return m.commitErr
-}
-
-func (m *mockTx) Rollback(ctx context.Context) error {
-	return nil
-}
-
-type mockTransactor struct {
-	tx  pgx.Tx
-	err error
-}
-
-func (m *mockTransactor) Begin(ctx context.Context) (pgx.Tx, error) {
-	return m.tx, m.err
+func (m *mockTxManager) DoInTx(ctx context.Context, fn func(repos repository.TxRepositories) error) error {
+	if m.err != nil {
+		return m.err
+	}
+	return fn(m.repos)
 }
 
 type mockUserRepo struct {
@@ -51,10 +41,6 @@ func (m *mockUserRepo) GetUser(ctx context.Context, login string) (*models.User,
 	return nil, nil
 }
 
-func (m *mockUserRepo) WithTx(tx pgx.Tx) UserRepository {
-	return m
-}
-
 type mockCoinTransferRepo struct {
 	addTransferFunc func(ctx context.Context, coinTransfer *models.CoinTransfer) error
 }
@@ -68,10 +54,6 @@ func (m *mockCoinTransferRepo) AddTransfer(ctx context.Context, coinTransfer *mo
 
 func (m *mockCoinTransferRepo) GetTransferHistory(ctx context.Context, userID int) ([]models.CoinTransfer, error) {
 	return nil, nil
-}
-
-func (m *mockCoinTransferRepo) WithTx(tx pgx.Tx) CoinTransferRepository {
-	return m
 }
 
 func TestSendCoins_InvalidAmount(t *testing.T) {
@@ -122,9 +104,6 @@ func TestSendCoins_SelfTransfer(t *testing.T) {
 }
 
 func TestSendCoins_InsufficientFunds(t *testing.T) {
-	txMock := &mockTx{}
-	transactorMock := &mockTransactor{tx: txMock}
-
 	userRepoMock := &mockUserRepo{
 		updateBalanceFunc: func(ctx context.Context, userID, amount int) error {
 			return app_errors.ErrInsufficientFunds
@@ -140,7 +119,14 @@ func TestSendCoins_InsufficientFunds(t *testing.T) {
 	}
 	coinTransferRepoMock := &mockCoinTransferRepo{}
 
-	svc := NewCoinTransferService(transactorMock, userRepoMock, coinTransferRepoMock)
+	txManagerMock := &mockTxManager{
+		repos: repository.TxRepositories{
+			User:         userRepoMock,
+			CoinTransfer: coinTransferRepoMock,
+		},
+	}
+
+	svc := NewCoinTransferService(txManagerMock, userRepoMock, coinTransferRepoMock)
 
 	err := svc.SendCoins(context.Background(), 1, "test_login1", 50)
 
@@ -150,9 +136,6 @@ func TestSendCoins_InsufficientFunds(t *testing.T) {
 }
 
 func TestSendCoins_Success(t *testing.T) {
-	txMock := &mockTx{}
-	transactorMock := &mockTransactor{tx: txMock}
-
 	userRepoMock := &mockUserRepo{
 		getUser: func(ctx context.Context, login string) (*models.User, error) {
 			return &models.User{
@@ -165,7 +148,14 @@ func TestSendCoins_Success(t *testing.T) {
 	}
 	coinTransferRepoMock := &mockCoinTransferRepo{}
 
-	svc := NewCoinTransferService(transactorMock, userRepoMock, coinTransferRepoMock)
+	txManagerMock := &mockTxManager{
+		repos: repository.TxRepositories{
+			User:         userRepoMock,
+			CoinTransfer: coinTransferRepoMock,
+		},
+	}
+
+	svc := NewCoinTransferService(txManagerMock, userRepoMock, coinTransferRepoMock)
 
 	err := svc.SendCoins(context.Background(), 1, "test_login2", 50)
 
@@ -177,9 +167,7 @@ func TestSendCoins_Success(t *testing.T) {
 func TestSendCoins_TxBeginError(t *testing.T) {
 	expected := errors.New("db connection lost")
 
-	txMock := &mockTx{}
-	transactorMock := &mockTransactor{
-		tx:  txMock,
+	txManagerMock := &mockTxManager{
 		err: expected,
 	}
 
@@ -195,7 +183,7 @@ func TestSendCoins_TxBeginError(t *testing.T) {
 	}
 	coinTransferRepoMock := &mockCoinTransferRepo{}
 
-	svc := NewCoinTransferService(transactorMock, userRepoMock, coinTransferRepoMock)
+	svc := NewCoinTransferService(txManagerMock, userRepoMock, coinTransferRepoMock)
 
 	err := svc.SendCoins(context.Background(), 1, "test_login2", 50)
 
