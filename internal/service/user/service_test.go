@@ -141,8 +141,8 @@ func TestLogin_Success(t *testing.T) {
 		t.Fatal("failed to cast claims to MapClaims")
 	}
 
-	if float64(userMock.ID) != claims["userId"].(float64) {
-		t.Errorf("expected userId %d got %v", userMock.ID, claims["userId"])
+	if float64(userMock.ID) != claims["userID"].(float64) {
+		t.Errorf("expected userId %d got %v", userMock.ID, claims["userID"])
 	}
 }
 

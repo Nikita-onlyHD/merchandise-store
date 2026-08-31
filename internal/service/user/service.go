@@ -70,7 +70,7 @@ func (s *Service) Auth(ctx context.Context, login string, password string) (stri
 	}
 
 	claims := jwt.MapClaims{
-		"userId":   user.ID,
+		"userID":   user.ID,
 		"username": user.Login,
 		"exp":      time.Now().Add(time.Hour).Unix(),
 	}
