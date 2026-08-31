@@ -11,6 +11,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/Nikita-onlyHD/merchandise-store/internal/config"
 	"github.com/Nikita-onlyHD/merchandise-store/internal/handler"
 	"github.com/Nikita-onlyHD/merchandise-store/internal/repository"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -33,22 +34,9 @@ func main() {
 func run() error {
 	ctx := context.Background()
 
-	dbURL := os.Getenv("DATABASE_URL")
-	if dbURL == "" {
-		return errors.New("failed to get DATABASE_URL environment variable")
-	}
+	cfg := config.Load()
 
-	jwtSecret := os.Getenv("JWT_SECRET")
-	if jwtSecret == "" {
-		jwtSecret = "super-secret-key"
-	}
-
-	port := os.Getenv("SERVER_PORT")
-	if port == "" {
-		port = "8080"
-	}
-
-	pool, err := pgxpool.New(ctx, dbURL)
+	pool, err := pgxpool.New(ctx, cfg.DatabaseURL())
 	if err != nil {
 		return fmt.Errorf("failed to create connection pool: %w", err)
 	}
@@ -71,7 +59,7 @@ func run() error {
 		userRepo,
 		inventoryRepo,
 		coinTransferRepo,
-		jwtSecret,
+		cfg.JWTSecret,
 	)
 
 	coinTransferSvc := coinService.NewCoinTransferService(
@@ -97,11 +85,14 @@ func run() error {
 		userH,
 		itemH,
 		coinTransferH,
-		jwtSecret,
+		cfg.JWTSecret,
 	)
 
+	mux.HandleFunc("GET /health", handler.HealthCheckHandler)
+	mux.HandleFunc("GET /ready", handler.ReadinessHandler(pool))
+
 	server := &http.Server{
-		Addr:         ":" + port,
+		Addr:         ":" + cfg.ServerPort,
 		Handler:      appHandler,
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 10 * time.Second,
@@ -111,7 +102,7 @@ func run() error {
 	serverErrors := make(chan error, 1)
 
 	go func() {
-		log.Printf("server is starting on port %s", port)
+		log.Printf("server is starting on port %s", cfg.ServerPort)
 		serverErrors <- server.ListenAndServe()
 	}()
 
