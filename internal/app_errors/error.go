@@ -1,10 +1,8 @@
-package app_errors
+package apperr
 
 import "errors"
 
-var (
-	ErrItemNotFound = errors.New("item not found")
-)
+var ErrItemNotFound = errors.New("item not found")
 
 var (
 	ErrUserNotFound      = errors.New("user not found")

@@ -6,7 +6,7 @@ type CoinTransfer struct {
 	ID         int
 	FromUserID int
 	ToUserID   int
-	Amount     uint
+	Amount     int
 	CreatedAt  time.Time
 }
 
@@ -14,6 +14,6 @@ type CoinTransferDetail struct {
 	ID        int
 	FromUser  string
 	ToUser    string
-	Amount    uint
+	Amount    int
 	CreatedAt time.Time
 }

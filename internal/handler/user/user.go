@@ -6,7 +6,7 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/Nikita-onlyHD/merchandise-store/internal/app_errors"
+	apperr "github.com/Nikita-onlyHD/merchandise-store/internal/app_errors"
 	"github.com/Nikita-onlyHD/merchandise-store/internal/dto"
 	"github.com/Nikita-onlyHD/merchandise-store/internal/handler"
 	"github.com/Nikita-onlyHD/merchandise-store/internal/middleware"
@@ -40,7 +40,7 @@ func (h *UserHandler) Auth(w http.ResponseWriter, r *http.Request) {
 
 	token, err := h.userService.Auth(r.Context(), req.Login, req.Password)
 	if err != nil {
-		if errors.Is(err, app_errors.ErrIncorrectPassword) {
+		if errors.Is(err, apperr.ErrIncorrectPassword) {
 			handler.SendError(w, http.StatusUnauthorized, "Неавторизован.")
 			return
 		}

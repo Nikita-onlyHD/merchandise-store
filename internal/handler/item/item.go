@@ -5,7 +5,7 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/Nikita-onlyHD/merchandise-store/internal/app_errors"
+	apperr "github.com/Nikita-onlyHD/merchandise-store/internal/app_errors"
 	"github.com/Nikita-onlyHD/merchandise-store/internal/handler"
 	"github.com/Nikita-onlyHD/merchandise-store/internal/middleware"
 )
@@ -37,7 +37,7 @@ func (h *ItemHandler) BuyItem(w http.ResponseWriter, r *http.Request) {
 
 	err := h.itemService.BuyItem(r.Context(), itemName, userID)
 	if err != nil {
-		if errors.Is(err, app_errors.ErrInsufficientFunds) || errors.Is(err, app_errors.ErrItemNotFound) {
+		if errors.Is(err, apperr.ErrInsufficientFunds) || errors.Is(err, apperr.ErrItemNotFound) {
 			handler.SendError(w, http.StatusBadRequest, "Неверный запрос.")
 			return
 		}

@@ -1,4 +1,4 @@
-package coin_transfer
+package transfer
 
 import (
 	"context"

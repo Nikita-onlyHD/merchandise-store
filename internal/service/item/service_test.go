@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/Nikita-onlyHD/merchandise-store/internal/app_errors"
+	apperr "github.com/Nikita-onlyHD/merchandise-store/internal/app_errors"
 	"github.com/Nikita-onlyHD/merchandise-store/internal/models"
 	"github.com/Nikita-onlyHD/merchandise-store/internal/repository"
 )
@@ -62,7 +62,7 @@ func (m *mockUserRepo) GetUser(ctx context.Context, login string) (*models.User,
 func TestBuyItem_ItemNotFound(t *testing.T) {
 	itemRepoMock := &mockItemRepo{
 		getItemByNameFunc: func(ctx context.Context, name string) (*models.Item, error) {
-			return nil, app_errors.ErrItemNotFound
+			return nil, apperr.ErrItemNotFound
 		},
 	}
 
@@ -70,8 +70,8 @@ func TestBuyItem_ItemNotFound(t *testing.T) {
 
 	err := svc.BuyItem(context.Background(), "pen", 1)
 
-	if !errors.Is(err, app_errors.ErrItemNotFound) {
-		t.Errorf("expected %v got %v", app_errors.ErrItemNotFound, err)
+	if !errors.Is(err, apperr.ErrItemNotFound) {
+		t.Errorf("expected %v got %v", apperr.ErrItemNotFound, err)
 	}
 }
 
@@ -89,7 +89,7 @@ func TestBuyItem_InsufficientFunds(t *testing.T) {
 	}
 	userRepoMock := &mockUserRepo{
 		updateBalanceFunc: func(ctx context.Context, userID, amount int) error {
-			return app_errors.ErrInsufficientFunds
+			return apperr.ErrInsufficientFunds
 		},
 	}
 	inventoryRepoMock := &mockInventoryRepo{}
@@ -106,8 +106,8 @@ func TestBuyItem_InsufficientFunds(t *testing.T) {
 
 	err := svc.BuyItem(context.Background(), mockItem.Name, 1)
 
-	if !errors.Is(err, app_errors.ErrInsufficientFunds) {
-		t.Errorf("expected %v got %v", app_errors.ErrInsufficientFunds, err)
+	if !errors.Is(err, apperr.ErrInsufficientFunds) {
+		t.Errorf("expected %v got %v", apperr.ErrInsufficientFunds, err)
 	}
 }
 
@@ -137,7 +137,6 @@ func TestBuyItem_Success(t *testing.T) {
 	svc := NewItemService(txManagerMock, itemRepoMock, inventoryRepoMock, userRepoMock)
 
 	err := svc.BuyItem(context.Background(), mockItem.Name, 1)
-
 	if err != nil {
 		t.Errorf("expected no error got %v", err)
 	}

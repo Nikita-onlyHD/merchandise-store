@@ -49,7 +49,7 @@ func (m *txManager) DoInTx(ctx context.Context, fn func(repos TxRepositories) er
 	if err != nil {
 		return fmt.Errorf("failed to begin transaction: %w", err)
 	}
-	defer tx.Rollback(ctx)
+	defer func() { _ = tx.Rollback(ctx) }()
 
 	repos := TxRepositories{
 		User:         NewUserRepository(tx),

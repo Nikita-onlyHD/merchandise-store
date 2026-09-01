@@ -1,11 +1,11 @@
-package coin_transfer
+package transfer
 
 import (
 	"context"
 	"errors"
 	"fmt"
 
-	"github.com/Nikita-onlyHD/merchandise-store/internal/app_errors"
+	apperr "github.com/Nikita-onlyHD/merchandise-store/internal/app_errors"
 	"github.com/Nikita-onlyHD/merchandise-store/internal/models"
 	"github.com/Nikita-onlyHD/merchandise-store/internal/repository"
 )
@@ -30,19 +30,19 @@ func NewCoinTransferService(
 
 func (s *Service) SendCoins(ctx context.Context, fromUserID int, toUserLogin string, amount int) error {
 	if amount <= 0 {
-		return app_errors.ErrInvalidAmount
+		return apperr.ErrInvalidAmount
 	}
 
 	toUser, err := s.userRepo.GetUser(ctx, toUserLogin)
 	if err != nil {
-		if errors.Is(err, app_errors.ErrUserNotFound) {
-			return app_errors.ErrUserNotFound
+		if errors.Is(err, apperr.ErrUserNotFound) {
+			return apperr.ErrUserNotFound
 		}
 		return fmt.Errorf("failed to find recipient: %w", err)
 	}
 
 	if fromUserID == toUser.ID {
-		return app_errors.ErrSelfTransfer
+		return apperr.ErrSelfTransfer
 	}
 
 	return s.txManager.DoInTx(ctx, func(repos repository.TxRepositories) error {
@@ -59,7 +59,7 @@ func (s *Service) SendCoins(ctx context.Context, fromUserID int, toUserLogin str
 		coinTransfer := models.CoinTransfer{
 			FromUserID: fromUserID,
 			ToUserID:   toUser.ID,
-			Amount:     uint(amount),
+			Amount:     amount,
 		}
 
 		err = repos.CoinTransfer.AddTransfer(ctx, &coinTransfer)

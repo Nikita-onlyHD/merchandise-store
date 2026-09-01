@@ -1,11 +1,11 @@
-package coin_transfer
+package transfer
 
 import (
 	"context"
 	"errors"
 	"testing"
 
-	"github.com/Nikita-onlyHD/merchandise-store/internal/app_errors"
+	apperr "github.com/Nikita-onlyHD/merchandise-store/internal/app_errors"
 	"github.com/Nikita-onlyHD/merchandise-store/internal/models"
 	"github.com/Nikita-onlyHD/merchandise-store/internal/repository"
 )
@@ -15,7 +15,7 @@ type mockTxManager struct {
 	err   error
 }
 
-func (m *mockTxManager) DoInTx(ctx context.Context, fn func(repos repository.TxRepositories) error) error {
+func (m *mockTxManager) DoInTx(_ context.Context, fn func(repos repository.TxRepositories) error) error {
 	if m.err != nil {
 		return m.err
 	}
@@ -61,15 +61,15 @@ func TestSendCoins_InvalidAmount(t *testing.T) {
 
 	err := svc.SendCoins(context.Background(), 1, "test_login1", -10)
 
-	if !errors.Is(err, app_errors.ErrInvalidAmount) {
-		t.Errorf("expected error %v got %v", app_errors.ErrInvalidAmount, err)
+	if !errors.Is(err, apperr.ErrInvalidAmount) {
+		t.Errorf("expected error %v got %v", apperr.ErrInvalidAmount, err)
 	}
 }
 
 func TestSendCoins_UserNotFound(t *testing.T) {
 	userRepoMock := &mockUserRepo{
 		getUser: func(ctx context.Context, login string) (*models.User, error) {
-			return nil, app_errors.ErrUserNotFound
+			return nil, apperr.ErrUserNotFound
 		},
 	}
 
@@ -77,8 +77,8 @@ func TestSendCoins_UserNotFound(t *testing.T) {
 
 	err := svc.SendCoins(context.Background(), 1, "test_login1", 10)
 
-	if !errors.Is(err, app_errors.ErrUserNotFound) {
-		t.Errorf("expected error %v got %v", app_errors.ErrUserNotFound, err)
+	if !errors.Is(err, apperr.ErrUserNotFound) {
+		t.Errorf("expected error %v got %v", apperr.ErrUserNotFound, err)
 	}
 }
 
@@ -98,15 +98,15 @@ func TestSendCoins_SelfTransfer(t *testing.T) {
 
 	err := svc.SendCoins(context.Background(), 1, "test_login1", 10)
 
-	if !errors.Is(err, app_errors.ErrSelfTransfer) {
-		t.Errorf("expected error %v got %v", app_errors.ErrSelfTransfer, err)
+	if !errors.Is(err, apperr.ErrSelfTransfer) {
+		t.Errorf("expected error %v got %v", apperr.ErrSelfTransfer, err)
 	}
 }
 
 func TestSendCoins_InsufficientFunds(t *testing.T) {
 	userRepoMock := &mockUserRepo{
 		updateBalanceFunc: func(ctx context.Context, userID, amount int) error {
-			return app_errors.ErrInsufficientFunds
+			return apperr.ErrInsufficientFunds
 		},
 		getUser: func(ctx context.Context, login string) (*models.User, error) {
 			return &models.User{
@@ -130,8 +130,8 @@ func TestSendCoins_InsufficientFunds(t *testing.T) {
 
 	err := svc.SendCoins(context.Background(), 1, "test_login1", 50)
 
-	if !errors.Is(err, app_errors.ErrInsufficientFunds) {
-		t.Errorf("expected %v got %v", app_errors.ErrInsufficientFunds, err)
+	if !errors.Is(err, apperr.ErrInsufficientFunds) {
+		t.Errorf("expected %v got %v", apperr.ErrInsufficientFunds, err)
 	}
 }
 
@@ -158,7 +158,6 @@ func TestSendCoins_Success(t *testing.T) {
 	svc := NewCoinTransferService(txManagerMock, userRepoMock, coinTransferRepoMock)
 
 	err := svc.SendCoins(context.Background(), 1, "test_login2", 50)
-
 	if err != nil {
 		t.Errorf("expected no error got %v", err)
 	}

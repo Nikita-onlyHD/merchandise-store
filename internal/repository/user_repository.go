@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/Nikita-onlyHD/merchandise-store/internal/app_errors"
+	apperr "github.com/Nikita-onlyHD/merchandise-store/internal/app_errors"
 	"github.com/Nikita-onlyHD/merchandise-store/internal/models"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -30,7 +30,7 @@ func (r *userRepository) GetUser(ctx context.Context, login string) (*models.Use
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, app_errors.ErrUserNotFound
+			return nil, apperr.ErrUserNotFound
 		}
 		return nil, fmt.Errorf("failed to get user: %w", err)
 	}
@@ -49,7 +49,7 @@ func (r *userRepository) GetUserByID(ctx context.Context, userID int) (*models.U
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, app_errors.ErrUserNotFound
+			return nil, apperr.ErrUserNotFound
 		}
 		return nil, fmt.Errorf("failed to get user: %w", err)
 	}
@@ -66,7 +66,7 @@ func (r *userRepository) CreateUser(ctx context.Context, user *models.User) erro
 	if err != nil {
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
-			return app_errors.ErrUserAlreadyExists
+			return apperr.ErrUserAlreadyExists
 		}
 		return fmt.Errorf("failed to create user: %w", err)
 	}
@@ -83,13 +83,13 @@ func (r *userRepository) UpdateBalance(ctx context.Context, userID int, amount i
 	if err != nil {
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) && pgErr.Code == "23514" {
-			return app_errors.ErrInsufficientFunds
+			return apperr.ErrInsufficientFunds
 		}
 		return fmt.Errorf("failed to update user balance: %w", err)
 	}
 
 	if tag.RowsAffected() == 0 {
-		return app_errors.ErrUserNotFound
+		return apperr.ErrUserNotFound
 	}
 
 	return nil

@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/Nikita-onlyHD/merchandise-store/internal/app_errors"
+	apperr "github.com/Nikita-onlyHD/merchandise-store/internal/app_errors"
 	"github.com/Nikita-onlyHD/merchandise-store/internal/dto"
 	"github.com/Nikita-onlyHD/merchandise-store/internal/models"
 	"github.com/golang-jwt/jwt"
@@ -51,7 +51,7 @@ func NewUserService(
 func (s *Service) Auth(ctx context.Context, login string, password string) (string, error) {
 	user, err := s.userRepo.GetUser(ctx, login)
 	if err != nil {
-		if errors.Is(err, app_errors.ErrUserNotFound) {
+		if errors.Is(err, apperr.ErrUserNotFound) {
 			if regErr := s.Register(ctx, login, password); regErr != nil {
 				return "", regErr
 			}
@@ -65,7 +65,7 @@ func (s *Service) Auth(ctx context.Context, login string, password string) (stri
 	} else {
 		err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
 		if err != nil {
-			return "", app_errors.ErrIncorrectPassword
+			return "", apperr.ErrIncorrectPassword
 		}
 	}
 

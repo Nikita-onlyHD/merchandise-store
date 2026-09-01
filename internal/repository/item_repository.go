@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/Nikita-onlyHD/merchandise-store/internal/app_errors"
+	apperr "github.com/Nikita-onlyHD/merchandise-store/internal/app_errors"
 	"github.com/Nikita-onlyHD/merchandise-store/internal/models"
 	"github.com/jackc/pgx/v5"
 )
@@ -28,7 +28,7 @@ func (r *itemRepository) GetItemByName(ctx context.Context, name string) (*model
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, app_errors.ErrItemNotFound
+			return nil, apperr.ErrItemNotFound
 		}
 		return nil, fmt.Errorf("failed to get item: %w", err)
 	}

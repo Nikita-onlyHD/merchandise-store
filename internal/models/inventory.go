@@ -2,7 +2,7 @@ package models
 
 type InventoryItem struct {
 	ID       int
-	Quantity uint
+	Quantity int
 	UserID   int
 	Item     Item
 }
